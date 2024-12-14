@@ -4,6 +4,6 @@
 [x]Print the board
 [x]Get player input
 [x]Execute moves
-[ ]Combining our work so far
+[x]Combining our work so far
 [ ]Check for winners
 [ ]Check for a draw

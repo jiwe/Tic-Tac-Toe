@@ -87,12 +87,22 @@ fn make_move(
 
 fn main() {
     let mut board = new_board();
-    board[1][0] = 'X';
-    board[1][1] = 'O';
+    // board[1][0] = 'X';
+    // board[1][1] = 'O';
     render(&board);
-    let move_coords = get_move();
-    println!("=> {:?}", move_coords);
-    let player = 'X';
-    let new_board = make_move(board, move_coords, player).unwrap();
-    render(&new_board);
+
+    let mut count = 0;
+    let mut player = 'X';
+    loop {
+        let move_coords = get_move();
+        println!("{} => {:?}", player, move_coords);
+        if count % 2 == 0 {
+            player = 'O';
+        } else {
+            player = 'X';
+        }
+        board = make_move(board.clone(), move_coords, player).unwrap();
+        render(&board);
+        count += 1;
+    }
 }
