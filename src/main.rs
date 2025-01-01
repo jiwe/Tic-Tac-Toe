@@ -1,4 +1,4 @@
-use std::io;
+use std::{borrow, io};
 
 fn new_board() -> Vec<Vec<char>> {
     let size = 3;
@@ -85,10 +85,38 @@ fn make_move(
     }
 }
 
+fn get_winner(board: &Vec<Vec<char>>) -> Option<char> {
+    let num_rows = board.len();
+    let num_cols = board[0].len();
+    let mut combined = board.clone();
+    for j in 0..num_cols {
+        combined.push((0..num_rows).map(|row_index| board[row_index][j]).collect());
+    }
+    combined.push(
+        (0..num_rows)
+            .map(|row_index| board[row_index][row_index])
+            .collect(),
+    );
+    combined.push(
+        (0..num_rows)
+            .map(|row_index| board[row_index][2 - row_index])
+            .collect(),
+    );
+
+    for line in combined {
+        let players = vec!['X', 'O'];
+        for player in players {
+            if line.iter().all(|&x| x == player) {
+                return Some(player);
+            }
+        }
+    }
+
+    None
+}
+
 fn main() {
     let mut board = new_board();
-    // board[1][0] = 'X';
-    // board[1][1] = 'O';
     render(&board);
 
     let mut count = 0;
@@ -103,6 +131,10 @@ fn main() {
         }
         board = make_move(board.clone(), move_coords, player).unwrap();
         render(&board);
+        if let Some(p) = get_winner(&board) {
+            println!("Winner: {}", p);
+            break;
+        }
         count += 1;
     }
 }
