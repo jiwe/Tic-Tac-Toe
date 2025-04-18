@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::{borrow, io};
 
 fn new_board() -> Vec<Vec<char>> {
@@ -45,7 +46,7 @@ fn render(board: &Vec<Vec<char>>) {
     }
 }
 
-fn get_move() -> (u32, u32) {
+fn get_move() -> (usize, usize) {
     println!("=> What is your move's X co-ordinate?:");
 
     let mut x = String::new();
@@ -57,21 +58,89 @@ fn get_move() -> (u32, u32) {
     io::stdin().read_line(&mut y).expect("y error");
 
     (
-        x.trim().parse::<u32>().unwrap(),
-        y.trim().parse::<u32>().unwrap(),
+        x.trim().parse::<usize>().unwrap(),
+        y.trim().parse::<usize>().unwrap(),
     )
+}
+
+fn random_ai(board: &Vec<Vec<char>>, current_player: char) -> (usize, usize) {
+    let num_rows = board.len();
+    let num_cols = board[0].len();
+    let mut rng = rand::thread_rng();
+    loop {
+        let (i, j) = (rng.gen_range(0..num_rows), rng.gen_range(0..num_cols));
+        if board[i][j] == ' ' {
+            return (i, j);
+        }
+    }
+}
+
+fn find_empty_index(board: &Vec<Vec<char>>, target: char) -> Option<(usize, usize)> {
+    let num_rows = board.len();
+    let num_cols = board[0].len();
+    let mut combined = board.clone();
+    for j in 0..num_cols {
+        combined.push((0..num_rows).map(|row_index| board[row_index][j]).collect());
+    }
+    combined.push(
+        (0..num_rows)
+            .map(|row_index| board[row_index][row_index])
+            .collect(),
+    );
+    combined.push(
+        (0..num_rows)
+            .map(|row_index| board[row_index][2 - row_index])
+            .collect(),
+    );
+
+    for (i, row) in combined.iter().enumerate() {
+        let mut count = 0;
+        let mut empty_index = None;
+
+        for (j, &val) in row.iter().enumerate() {
+            if val == target {
+                count += 1;
+            } else if val == ' ' {
+                empty_index = Some((i, j));
+            }
+        }
+
+        if count == 2 && empty_index.is_some() {
+            if (3..6).contains(&i) {
+                let (x, y) = empty_index.unwrap();
+                empty_index = Some((y, x - 3));
+            } else if i == 6 {
+                let (_x, y) = empty_index.unwrap();
+                empty_index = Some((y, y));
+            } else if i == 7 {
+                let (_x, y) = empty_index.unwrap();
+                empty_index = Some((y, 2 - y));
+            }
+            return empty_index;
+        }
+    }
+
+    None
+}
+
+fn finds_winning_moves_ai(board: &Vec<Vec<char>>, current_player: char) -> (usize, usize) {
+    if let Some(index) = find_empty_index(board, current_player) {
+        index
+    } else {
+        random_ai(board, current_player)
+    }
 }
 
 fn make_move(
     board: Vec<Vec<char>>,
-    move_coords: (u32, u32),
+    move_coords: (usize, usize),
     player: char,
 ) -> Result<Vec<Vec<char>>, String> {
     let mut res = board;
     if let c = res
-        .get_mut(move_coords.0 as usize)
+        .get_mut(move_coords.0)
         .unwrap()
-        .get_mut(move_coords.1 as usize)
+        .get_mut(move_coords.1)
         .unwrap()
     {
         if *c == ' ' {
@@ -115,6 +184,15 @@ fn get_winner(board: &Vec<Vec<char>>) -> Option<char> {
     None
 }
 
+fn is_board_full(board: &Vec<Vec<char>>) -> bool {
+    for line in board {
+        if line.iter().any(|&x| x == ' ') {
+            return false;
+        }
+    }
+    true
+}
+
 fn main() {
     let mut board = new_board();
     render(&board);
@@ -122,7 +200,9 @@ fn main() {
     let mut count = 0;
     let mut player = 'X';
     loop {
-        let move_coords = get_move();
+        // let move_coords = get_move();
+        // let move_coords = random_ai(&board, player);
+        let move_coords = finds_winning_moves_ai(&board, player);
         println!("{} => {:?}", player, move_coords);
         if count % 2 == 0 {
             player = 'O';
@@ -136,5 +216,10 @@ fn main() {
             break;
         }
         count += 1;
+
+        if is_board_full(&board) {
+            println!("IT'S A DRAW!!");
+            break;
+        }
     }
 }
