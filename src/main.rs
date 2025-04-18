@@ -131,6 +131,22 @@ fn finds_winning_moves_ai(board: &Vec<Vec<char>>, current_player: char) -> (usiz
     }
 }
 
+fn finds_winning_and_losing_moves_ai(
+    board: &Vec<Vec<char>>,
+    current_player: char,
+) -> (usize, usize) {
+    if let Some(index) = find_empty_index(board, current_player) {
+        index
+    } else {
+        let opponent_player = if current_player == 'O' { 'X' } else { 'O' };
+        if let Some(index) = find_empty_index(board, opponent_player) {
+            index
+        } else {
+            random_ai(board, current_player)
+        }
+    }
+}
+
 fn make_move(
     board: Vec<Vec<char>>,
     move_coords: (usize, usize),
@@ -202,7 +218,8 @@ fn main() {
     loop {
         // let move_coords = get_move();
         // let move_coords = random_ai(&board, player);
-        let move_coords = finds_winning_moves_ai(&board, player);
+        // let move_coords = finds_winning_moves_ai(&board, player);
+        let move_coords = finds_winning_and_losing_moves_ai(&board, player);
         println!("{} => {:?}", player, move_coords);
         if count % 2 == 0 {
             player = 'O';
